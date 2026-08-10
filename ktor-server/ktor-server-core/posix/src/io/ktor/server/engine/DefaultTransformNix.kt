@@ -6,14 +6,17 @@ package io.ktor.server.engine
 
 import io.ktor.http.content.*
 import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.util.pipeline.*
 import io.ktor.utils.io.*
-import io.ktor.utils.io.charsets.*
-import kotlinx.io.*
 
 internal actual suspend fun PipelineContext<Any, PipelineCall>.defaultPlatformTransformations(
     query: Any
-): Any? = null
+): Any? {
+    val channel = query as? ByteReadChannel ?: return null
 
-internal actual fun PipelineContext<*, PipelineCall>.multiPartData(rc: ByteReadChannel): MultiPartData =
-    error("Multipart is not supported in native")
+    return when (call.receiveType.type) {
+        MultiPartData::class -> multiPartData(channel)
+        else -> null
+    }
+}
